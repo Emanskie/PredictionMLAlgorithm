@@ -1,0 +1,54 @@
+* {
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+/*--------------------------------------------------------------
+# Navbar Bar
+--------------------------------------------------------------*/
+
+body {
+    padding-top: 56px; /* Adjust this value based on the height of your navbar */
+}
+
+.navbar {
+    background-color: #AEE7E5;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; /* Ensure it appears above other elements */
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: #000000;
+}
+
+.navbar-nav .nav-link {
+    transition: border-color 0.3s, color 0.3s;
+}
+
+.navbar-nav .nav-link:hover {
+    text-decoration: underline;
+    color: #f9e9de;
+}
+
+
+.custom-alert {
+    width: 20%; /* Adjust the width as needed */
+    margin: auto; /* Center the alert horizontally */
+}
+
+body {
+    background: url('https://static.vecteezy.com/system/resources/thumbnails/002/021/084/original/milk-flowing-over-a-black-background-free-video.jpg');
+    background-size: cover;
+    color: white; /* Set text color to white for better readability on a dark background */
+}
+
+#milkCard {
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark background for the card */
+}
+
