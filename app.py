@@ -3,9 +3,21 @@ import pickle
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, current_app
 from joblib import load
+from flask_mysqldb import MySQL
 
+
+app = Flask(__name__)
+
+# Configure MySQL
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'mlalgo'
+
+# Initialize MySQL
+mysql = MySQL(app)
 
 # load model Calories Prediction
 model = load('Calories_model.pkl')
@@ -124,6 +136,28 @@ def predict():
 
     else:
         return render_template('result.html')
+
+@app.route('/eda')
+def eda():
+    try:
+        # Use MySQL connection
+        cur = mysql.connection.cursor()
+
+        # Fetch Milk data
+        cur.execute("SELECT * FROM milknew")
+        milk_data = cur.fetchall()
+
+        # Fetch Calories data
+        cur.execute("SELECT * FROM caloriespred_data")
+        calories_data = cur.fetchall()
+
+        # Close cursor after fetching data
+        cur.close()
+
+        return render_template('eda.html', mushrooms=milk_data, valorant=calories_data)
+    except Exception as e:
+        print("Error:", str(e))
+        return render_template('error_page.html', error_message='An unexpected error occurred')
 
 if __name__ == '__main__':
     app.run(debug=True)
