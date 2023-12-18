@@ -5,12 +5,29 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from flask import Flask, render_template, request
 from joblib import load
+from flask_mysqldb import MySQL
+
+#for chart
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 
-# load model Calories Prediction
+app = Flask(__name__)
+
+# Configure MySQL
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'mlalgo'
+
+# Initialize MySQL
+mysql = MySQL(app)
+
+# Load model Calories Prediction
 model = load('Calories_model.pkl')
 
-# load scaler
+# Load scaler
 scalerfile = 'scaler.save'
 scaler = pickle.load(open(scalerfile, 'rb'))
 
@@ -43,12 +60,10 @@ def predict_milk_grade(features):
     return prediction[0]
 
 # Flask constructor
-app = Flask(__name__)
-
 @app.route('/')
 @app.route('/home', methods=["GET"])
 def home():
-    # render the main dashboard (Index.html)
+    # Render the main dashboard (Index.html)
     return render_template('home.html')
 
 
@@ -88,17 +103,17 @@ def predict_milk():
 def get_predict_milk():
     return render_template('index2.html')
 
-#'/predict_calories' as a reference page for '/home'
+# '/predict_calories' as a reference page for '/home'
 @app.route('/predict_calories', methods=['GET', 'POST'])
 def predict_calories():
-    # render the reference page (result.html)
+    # Render the reference page (result.html)
     return render_template('index.html')
 
-# get form data Calories
+# Get form data Calories
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     if request.method == 'GET':
-        # convert string value into numeric value
+        # Convert string value into numeric value
         gender = 1 if request.args.get('gender') == 'Male' else 0
         age = float(request.args.get('age'))
         duration = float(request.args.get('duration'))
@@ -107,23 +122,86 @@ def predict():
         height = float(request.args.get('height'))
         weight = float(request.args.get('weight'))
 
-        # store form values into a list
+        # Store form values into a list
         values = [gender, age, height, weight, duration, heart_rate, temp]
 
-        # turn into array & reshape array for prediction
+        # Turn into array & reshape array for prediction
         input_array = np.asarray(values).reshape(1, -1)
 
-        # scale the inputted reshaped data
+        # Scale the inputted reshaped data
         scaled_set = scaler.transform(input_array)
 
-        # predict with inputted values
+        # Predict with inputted values
         predicted = model.predict(scaled_set)
 
-        # display predicted values in result.html file
+        # Display predicted values in result.html file
         return render_template('result.html', predicted_value=predicted[0])
 
     else:
         return render_template('result.html')
+
+@app.route('/eda')
+def eda():
+    try:
+        cur_milk = mysql.connection.cursor()
+        cur_milk.execute("SELECT * FROM milknew")
+        milk_data = cur_milk.fetchall()
+        cur_milk.close()
+
+        cur_calories = mysql.connection.cursor()
+        cur_calories.execute("SELECT * FROM caloriespred_data")
+        calories_data = cur_calories.fetchall()
+        cur_calories.close()
+
+        return render_template('eda.html', milk=milk_data, calories=calories_data)
+    except Exception as e:
+        print("Error:", str(e))
+        return render_template('error_page.html', error_message='An unexpected error occurred')
+
+@app.route('/chart')
+def chart():
+    # Fetch data from MySQL for Elo Gain
+        cur_calories = mysql.connection.cursor()
+        cur_calories.execute("SELECT `Calories` FROM caloriespred_data")
+        elo_calories = cur_calories.fetchall()
+        cur_calories.close()
+
+        # Fetch data from MySQL for Mushroom class distribution
+        cur_class_distribution = mysql.connection.cursor()
+        cur_class_distribution.execute("SELECT `Grade` FROM milknew")
+        class_distribution_data = cur_class_distribution.fetchall()
+        cur_class_distribution.close()
+
+        # Convert data to DataFrames
+        df_elo_gain = pd.DataFrame(elo_calories, columns=['Calories'])
+        df_class_distribution = pd.DataFrame(class_distribution_data, columns=['Grade'])
+
+        # Plotting Histogram for Elo Gain
+        plt.figure(figsize=(8, 6))
+        df_elo_gain.hist('Calories')
+        plt.xlabel('Calories')
+        plt.ylabel('Count')
+        plt.title('Distribution of Calories')
+        histogram_img = BytesIO()
+        plt.savefig(histogram_img, format='png')
+        histogram_img.seek(0)
+        plt.clf()
+
+        # Plotting Pie Chart for Mushroom class distribution
+        class_counts = df_class_distribution['Grade'].value_counts()
+        plt.figure(figsize=(8, 6))
+        plt.pie(class_counts, labels=['Healthy (high)', 'Nearly Expired (medium)', 'Expired (low)'], colors=['green', 'yellow', 'red'], autopct='%1.1f%%',
+                startangle=90)
+        plt.title('Milk Quality')
+        pie_chart_img = BytesIO()
+        plt.savefig(pie_chart_img, format='png')
+        pie_chart_img.seek(0)
+
+        # Pass the images as base64-encoded strings to the template
+        histogram_encoded = base64.b64encode(histogram_img.read()).decode('utf-8')
+        pie_chart_encoded = base64.b64encode(pie_chart_img.read()).decode('utf-8')
+
+        return render_template('chart.html', histogram_img=histogram_encoded, pie_chart_img=pie_chart_encoded)
 
 if __name__ == '__main__':
     app.run(debug=True)

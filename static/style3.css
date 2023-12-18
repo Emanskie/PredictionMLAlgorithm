@@ -1,0 +1,41 @@
+
+* {
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+/*--------------------------------------------------------------
+# Navbar Bar
+--------------------------------------------------------------*/
+
+
+.navbar {
+    background-color: #AEE7E5;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; /* Ensure it appears above other elements */
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: #000000;
+}
+
+.navbar-nav .nav-link {
+    transition: border-color 0.3s, color 0.3s;
+}
+
+.navbar-nav .nav-link:hover {
+    text-decoration: underline;
+    color: #f9e9de;
+}
+
+
+.custom-alert {
+    width: 20%; /* Adjust the width as needed */
+    margin: auto; /* Center the alert horizontally */
+}
